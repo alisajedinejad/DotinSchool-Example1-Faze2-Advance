@@ -21,14 +21,12 @@ public class Main {
     static Logger log = Logger.getLogger(Main.class.getName());
 
     public static void main(String args[]) throws InterruptedException {
-//        ExecutorService executorService =
-//                new ThreadPoolExecutor(100, 1000000, 0L, TimeUnit.MILLISECONDS,
-//                        new LinkedBlockingQueue<Runnable>());
-//        ExecutorService executorService = Executors.newFixedThreadPool(10000);
+
+        long start = System.currentTimeMillis();
         ExecutorService executorService = Executors.newFixedThreadPool(1000);
         BasicConfigurator.configure();
         log.info("Start create 1000 Random Pay And Balance .");
-//        createRandomPayAndBalance();
+        createRandomPayAndBalance();
         log.info("1000 Random Pay And Balance generated .");
         FileReader fileReader = new FileReader();
         List<PayEntity> payEntities = fileReader.getPaysEntities();
@@ -54,6 +52,10 @@ public class Main {
 
         }
         log.info("Finished all threads");
+        long end = System.currentTimeMillis();
+
+        long cal = end - start;
+        log.debug("time of exe is : " + cal);
     }
 
     public static void createRandomPayAndBalance() {
@@ -84,16 +86,15 @@ public class Main {
             sumOfSalary = sumOfSalary.add(creatorSalary);
             BalanceEntity balanceEntity = new BalanceEntity();
             balanceEntity.setDepositNumber(depositNumberPartOne + "." + depositNumberPartTwo + "." + depositNumberPartThree + "." + depositNumberPartFour);
-//            balanceEntity.setAmount(amount);
-            balanceEntity.setAmount(BigDecimal.ZERO);
+            balanceEntity.setAmount(amount);
             balanceEntities.add(balanceEntity);
             PayEntity payEntity = new PayEntity();
             payEntity.setDepositNumber(depositNumberPartOne + "." + depositNumberPartTwo + "." + depositNumberPartThree + "." + depositNumberPartFour);
             payEntity.setDepositType("creditor");
-//            payEntity.setAmount(creatorSalary);
-            payEntity.setAmount(BigDecimal.TEN);
+            payEntity.setAmount(creatorSalary);
             payEntities.add(payEntity);
         }
+
         PayEntity debtorForPay = new PayEntity();
         debtorForPay.setAmount(sumOfSalary);
         debtorForPay.setDepositType("debtor");
