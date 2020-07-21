@@ -9,16 +9,6 @@ public class TransactionEntity {
     private String debtorDepositNumber;
     private String creditorDepositNumber;
     private BigDecimal amount;
-    private boolean checked;
-
-
-    public boolean isChecked() {
-        return checked;
-    }
-
-    public void setChecked(boolean checked) {
-        this.checked = checked;
-    }
 
     public String getCreditorDepositNumber() {
         return creditorDepositNumber;
@@ -51,7 +41,6 @@ public class TransactionEntity {
                 "debtorDepositNumber='" + debtorDepositNumber + '\'' +
                 ", creditorDepositNumber='" + creditorDepositNumber + '\'' +
                 ", amount=" + amount +
-                ", checked=" + checked +
                 '}';
     }
 }

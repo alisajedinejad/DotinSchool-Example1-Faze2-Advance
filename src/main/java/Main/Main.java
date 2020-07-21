@@ -1,5 +1,6 @@
 package Main;
 
+
 import Exception.DepositBalanceNotEnough;
 import Service.Handler.FileReader;
 import Service.Handler.FileWriters;
@@ -7,30 +8,28 @@ import Service.SettleSalary;
 import Service.Validation.CheckDepositBalanceNotEnough;
 import model.BalanceEntity;
 import model.PayEntity;
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 public class Main {
-    static Logger log = Logger.getLogger(Main.class.getName());
+    private static final Logger log = Logger.getLogger(Main.class.getName());
 
     public static void main(String args[]) throws InterruptedException {
 
-        long start = System.currentTimeMillis();
-        ExecutorService executorService = Executors.newFixedThreadPool(1000);
-        BasicConfigurator.configure();
+        ExecutorService executorService = Executors.newFixedThreadPool(50);
         log.info("Start create 1000 Random Pay And Balance .");
         createRandomPayAndBalance();
         log.info("1000 Random Pay And Balance generated .");
-        FileReader fileReader = new FileReader();
-        List<PayEntity> payEntities = fileReader.getPaysEntities();
-        List<BalanceEntity> balanceEntities = fileReader.getBalanceEntities();
+        long start = System.currentTimeMillis();
+        List<PayEntity> payEntities = FileReader.getPaysEntities();
+        List<BalanceEntity> balanceEntities = FileReader.getBalanceEntities();
         try {
             CheckDepositBalanceNotEnough checkNegativeDepositBalance = new CheckDepositBalanceNotEnough();
             checkNegativeDepositBalance.check(payEntities, balanceEntities);
@@ -40,22 +39,24 @@ public class Main {
         }
         SettleSalary.setBalanceEntities(balanceEntities);
         SettleSalary.setPayEntities(payEntities);
-        FileWriters.setBalanceEntities(balanceEntities);
-
         for (PayEntity payEntity : payEntities) {
-            SettleSalary settleSalary = new SettleSalary();
-            settleSalary.setPayEntity(payEntity);
-            executorService.execute(settleSalary);
+            MyThreads myThreads = new MyThreads();
+            myThreads.setPayEntity(payEntity);
+            executorService.execute(myThreads);
         }
         executorService.shutdown();
         while (!executorService.isTerminated()) {
 
         }
+        try {
+            FileWriters.writeToBalance(balanceEntities);
+            FileWriters.writeToPay(payEntities);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         log.info("Finished all threads");
         long end = System.currentTimeMillis();
-
-        long cal = end - start;
-        log.debug("time of exe is : " + cal);
+        log.info("time of exe is : " + (end - start));
     }
 
     public static void createRandomPayAndBalance() {
@@ -67,7 +68,7 @@ public class Main {
         debtor.setAmount(new BigDecimal("1000000000"));
         debtor.setDepositNumber("1.10.100.1");
         balanceEntities.add(debtor);
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 1000; i++) {
             int depositNumberPartOne = rand.nextInt(7) + 2;
             int depositNumberPartTwo = rand.nextInt(899) + 100;
             int depositNumberPartThree = rand.nextInt(899) + 100;
@@ -94,20 +95,16 @@ public class Main {
             payEntity.setAmount(creatorSalary);
             payEntities.add(payEntity);
         }
-
         PayEntity debtorForPay = new PayEntity();
         debtorForPay.setAmount(sumOfSalary);
         debtorForPay.setDepositType("debtor");
         debtorForPay.setDepositNumber("1.10.100.1");
         payEntities.add(debtorForPay);
-
-
         try {
             FileWriters.writeToBalance(balanceEntities);
             FileWriters.writeToPay(payEntities);
-        } catch (IOException | DepositBalanceNotEnough e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 }

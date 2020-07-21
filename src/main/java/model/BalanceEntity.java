@@ -6,12 +6,9 @@ public class BalanceEntity {
     private String depositNumber;
     private BigDecimal amount;
 
-
     public BigDecimal getAmount() {
         return amount;
     }
-
-
 
     public void setAmount(BigDecimal amount) {
         this.amount = amount;

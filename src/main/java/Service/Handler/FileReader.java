@@ -3,25 +3,30 @@ package Service.Handler;
 import model.BalanceEntity;
 import model.PayEntity;
 import model.TransactionEntity;
-import org.apache.log4j.Logger;
 
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
+import java.util.logging.Logger;
+
+//import org.apache.log4j.Logger;
 
 public class FileReader {
     static Logger log = Logger.getLogger(FileReader.class.getName());
 
-    public List<PayEntity> getPaysEntities() {
+    public static synchronized List<PayEntity> getPaysEntities() {
         List<PayEntity> payEntities = new ArrayList<PayEntity>();
-        try {
-            File myObj = new File("DataBase/pay.txt");
-            Scanner myReader = new Scanner(myObj);
-            while (myReader.hasNextLine()) {
-                String line = myReader.nextLine();
+        Path path = Paths.get("DataBase/pay.txt");
+        try (BufferedReader reader = Files.newBufferedReader(path, Charset.forName("UTF-8"))) {
+            String currentLine = null;
+            while ((currentLine = reader.readLine()) != null) {//while there is content on the current line
+                String line = (currentLine); // print the current line
                 String[] thisLine = line.split("\t");
                 PayEntity payEntity = new PayEntity();
                 payEntity.setAmount(new BigDecimal(thisLine[2]));
@@ -30,35 +35,34 @@ public class FileReader {
                 payEntities.add(payEntity);
             }
             log.info("All files successfully read .");
-            myReader.close();
-        } catch (FileNotFoundException e) {
-            log.error("An error occurred.");
-            e.printStackTrace();
+        } catch (IOException ex) {
+            ex.printStackTrace(); //handle an exception here
         }
+
         return payEntities;
     }
 
-    public List<BalanceEntity> getBalanceEntities() {
+    public static synchronized List<BalanceEntity> getBalanceEntities() {
         List<BalanceEntity> balanceEntities = new ArrayList<BalanceEntity>();
-        try {
-            File myObj = new File("DataBase/balance.txt");
-            Scanner myReader = new Scanner(myObj);
-            while (myReader.hasNextLine()) {
-                String line = myReader.nextLine();
+        Path path = Paths.get("DataBase/balance.txt");
+        try (BufferedReader reader = Files.newBufferedReader(path, Charset.forName("UTF-8"))) {
+            String currentLine = null;
+            while ((currentLine = reader.readLine()) != null) {//while there is content on the current line
+                String line = (currentLine); // print the current line
                 String[] thisLine = line.split("\t");
                 BalanceEntity balanceEntity = new BalanceEntity();
                 balanceEntity.setAmount(new BigDecimal(thisLine[1]));
                 balanceEntity.setDepositNumber(thisLine[0]);
                 balanceEntities.add(balanceEntity);
             }
-            myReader.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+        } catch (IOException ex) {
+            ex.printStackTrace(); //handle an exception here
         }
+
         return balanceEntities;
     }
 
-    public String getDebtorNumber(List<PayEntity> payEntities) {
+    public static synchronized String getDebtorNumber(List<PayEntity> payEntities) {
         for (PayEntity payEntity : payEntities) {
             if (payEntity.getDepositType().equals("debtor")) {
                 return payEntity.getDepositNumber();
@@ -67,7 +71,7 @@ public class FileReader {
         return null;
     }
 
-    public BigDecimal getDebtorMoney(List<PayEntity> payEntities) {
+    public static synchronized BigDecimal getDebtorMoney(List<PayEntity> payEntities) {
         for (PayEntity payEntity : payEntities) {
             if (payEntity.getDepositType().equals("debtor")) {
                 return payEntity.getAmount();
@@ -76,13 +80,13 @@ public class FileReader {
         return null;
     }
 
-    public List<TransactionEntity> getTransactionEntities() {
+    public static synchronized List<TransactionEntity> getTransactionEntities() {
         List<TransactionEntity> transactionEntities = new ArrayList<TransactionEntity>();
-        try {
-            File myObj = new File("DataBase/transactions.txt");
-            Scanner myReader = new Scanner(myObj);
-            while (myReader.hasNextLine()) {
-                String line = myReader.nextLine();
+        Path path = Paths.get("DataBase/transactions.txt");
+        try (BufferedReader reader = Files.newBufferedReader(path, Charset.forName("UTF-8"))) {
+            String currentLine = null;
+            while ((currentLine = reader.readLine()) != null) {
+                String line = (currentLine);
                 String[] thisLine = line.split("\t");
                 TransactionEntity transactionEntity = new TransactionEntity();
                 transactionEntity.setAmount(null);
@@ -90,9 +94,8 @@ public class FileReader {
                 transactionEntity.setCreditorDepositNumber(thisLine[0]);
                 transactionEntities.add(transactionEntity);
             }
-            myReader.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+        } catch (IOException ex) {
+            ex.printStackTrace();
         }
         return transactionEntities;
     }

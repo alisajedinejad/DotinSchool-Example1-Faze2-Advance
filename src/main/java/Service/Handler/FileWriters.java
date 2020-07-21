@@ -4,20 +4,20 @@ import Exception.DepositBalanceNotEnough;
 import model.BalanceEntity;
 import model.PayEntity;
 import model.TransactionEntity;
-import org.apache.log4j.Logger;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
 public class FileWriters {
-    static Logger log = Logger.getLogger(FileWriters.class.getName());
     private static List<BalanceEntity> balanceEntities = new ArrayList<BalanceEntity>();
     private static List<TransactionEntity> transactionEntities = new ArrayList<TransactionEntity>();
 
-    public static synchronized void writeToBalance(List<BalanceEntity> balanceEntities) throws DepositBalanceNotEnough, IOException {
+    public static synchronized void writeToBalance(List<BalanceEntity> balanceEntities) throws IOException {
         StringBuilder stringBuilder = new StringBuilder();
         for (BalanceEntity balanceEntity : balanceEntities) {
             stringBuilder.append(balanceEntity.getDepositNumber());
@@ -25,12 +25,15 @@ public class FileWriters {
             stringBuilder.append(balanceEntity.getAmount());
             stringBuilder.append("\n");
         }
-        FileWriter myWriter = new FileWriter("DataBase/balance.txt");
-        myWriter.write(stringBuilder.toString());
-        myWriter.close();
+        Path filePathObj = Paths.get("DataBase/balance.txt");
+        try {
+            Files.write(filePathObj, stringBuilder.toString().getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException ioExceptionObj) {
+            ioExceptionObj.printStackTrace();
+        }
     }
 
-    public static synchronized  void writeToBalance(BalanceEntity balanceEntity) throws DepositBalanceNotEnough, IOException {
+    public static synchronized void writeToBalance(BalanceEntity balanceEntity) throws DepositBalanceNotEnough, IOException {
         StringBuilder stringBuilder = new StringBuilder();
         for (BalanceEntity balanceEntity1 : FileWriters.balanceEntities) {
             if (balanceEntity1.getDepositNumber().equals(balanceEntity.getDepositNumber())) {
@@ -44,19 +47,17 @@ public class FileWriters {
             stringBuilder.append(balanceEntity2.getAmount());
             stringBuilder.append("\n");
         }
-        FileWriter myWriter = new FileWriter("DataBase/balance.txt");
-        myWriter.write(stringBuilder.toString());
-        myWriter.close();
+        Path filePathObj = Paths.get("DataBase/balance.txt");
+        try {
+            Files.write(filePathObj, stringBuilder.toString().getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException ioExceptionObj) {
+            ioExceptionObj.printStackTrace();
+        }
     }
 
-    public  static synchronized void writeToTransaction(List<TransactionEntity> transactionEntities) throws DepositBalanceNotEnough, IOException {
+    public static synchronized void writeToTransaction(List<TransactionEntity> transactionEntities) throws IOException {
 
         StringBuilder stringBuilder = new StringBuilder();
-        File myObj = new File("DataBase/transactions.txt");
-        if (myObj.createNewFile()) {
-            log.info("File created: " + myObj.getName());
-        }
-        int i = 0;
         for (TransactionEntity transactionEntity : transactionEntities) {
             stringBuilder.append(transactionEntity.getDebtorDepositNumber());
             stringBuilder.append("\t");
@@ -65,24 +66,17 @@ public class FileWriters {
             stringBuilder.append(transactionEntity.getAmount());
             stringBuilder.append("\n");
         }
-        FileWriter myWriter = new FileWriter("DataBase/transactions.txt");
-        myWriter.write(stringBuilder.toString());
-        myWriter.close();
+        Path filePathObj = Paths.get("DataBase/transactions.txt");
+        try {
+            Files.write(filePathObj, stringBuilder.toString().getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException ioExceptionObj) {
+            ioExceptionObj.printStackTrace();
+        }
     }
 
-    public  static synchronized void writeToTransaction(TransactionEntity transactionEntity) throws DepositBalanceNotEnough, IOException {
-        File myObj = new File("DataBase/transactions.txt");
-        if (myObj.createNewFile()) {
-            log.info("File created: " + myObj.getName());
-        }
-
-
+    public static synchronized void writeToTransaction(TransactionEntity transactionEntity) throws DepositBalanceNotEnough, IOException {
         StringBuilder stringBuilder = new StringBuilder();
-
-
         FileWriters.transactionEntities.add(transactionEntity);
-
-
         for (TransactionEntity transactionEntity1 : FileWriters.transactionEntities) {
             stringBuilder.append(transactionEntity1.getDebtorDepositNumber());
             stringBuilder.append("\t");
@@ -91,12 +85,15 @@ public class FileWriters {
             stringBuilder.append(transactionEntity1.getAmount());
             stringBuilder.append("\n");
         }
-        FileWriter myWriter = new FileWriter("DataBase/transactions.txt");
-        myWriter.write(stringBuilder.toString());
-        myWriter.close();
+        Path filePathObj = Paths.get("DataBase/transactions.txt");
+        try {
+            Files.write(filePathObj, stringBuilder.toString().getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException ioExceptionObj) {
+            ioExceptionObj.printStackTrace();
+        }
     }
 
-    public  static synchronized void writeToPay(List<PayEntity> payEntities) throws DepositBalanceNotEnough, IOException {
+    public static synchronized void writeToPay(List<PayEntity> payEntities) throws IOException {
         StringBuilder stringBuilder = new StringBuilder();
         for (PayEntity payEntity : payEntities) {
             stringBuilder.append(payEntity.getDepositType());
@@ -106,9 +103,12 @@ public class FileWriters {
             stringBuilder.append(payEntity.getAmount());
             stringBuilder.append("\n");
         }
-        FileWriter myWriter = new FileWriter("DataBase/pay.txt");
-        myWriter.write(stringBuilder.toString());
-        myWriter.close();
+        Path filePathObj = Paths.get("DataBase/pay.txt");
+        try {
+            Files.write(filePathObj, stringBuilder.toString().getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException ioExceptionObj) {
+            ioExceptionObj.printStackTrace();
+        }
     }
 
     public static List<BalanceEntity> getBalanceEntities() {
