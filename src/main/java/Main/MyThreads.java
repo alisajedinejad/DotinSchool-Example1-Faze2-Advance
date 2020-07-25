@@ -1,12 +1,10 @@
 package Main;
 
-import Exception.DepositBalanceNotEnough;
 import Service.SettleSalary;
 import model.BalanceEntity;
 import model.PayEntity;
 import model.TransactionEntity;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -25,24 +23,24 @@ public class MyThreads implements Runnable {
 
     @Override
     public void run() {
-        SettleSalary settleSalary = new SettleSalary();
         if (!this.payEntity.getDepositNumber().equals(SettleSalary.getDebtorDepositNumber())) {
-            List<BalanceEntity> balanceEntities2 = SettleSalary.getBalanceEntities();
-            List<TransactionEntity> transactionEntities = SettleSalary.getTransactionEntities();
-            for (BalanceEntity balanceEntity : balanceEntities2) {
-
+            List<BalanceEntity> balanceEntities = SettleSalary.getBalanceEntities();
+            for (BalanceEntity balanceEntity : balanceEntities) {
                 if (balanceEntity.getDepositNumber().equals(this.payEntity.getDepositNumber())) {
-
                     balanceEntity.setAmount(balanceEntity.getAmount().add(payEntity.getAmount()));
-                    SettleSalary.subFromDebtor(payEntity.getAmount());
-                    try {
-                        SettleSalary.setTransaction(payEntity);
-                    } catch (DepositBalanceNotEnough | IOException e) {
-                        e.printStackTrace();
-                    }
+                    TransactionEntity transactionEntity = new TransactionEntity();
+                    transactionEntity.setDebtorDepositNumber(SettleSalary.getDebtorDepositNumber());
+                    transactionEntity.setCreditorDepositNumber(balanceEntity.getDepositNumber());
+                    transactionEntity.setAmount(payEntity.getAmount());
+                    SettleSalary.criticalSection(payEntity.getAmount());
+                    SettleSalary.criticalSection(balanceEntities);
+                    SettleSalary.criticalSection(transactionEntity);
+                    SettleSalary.criticalSection(payEntity.getDepositNumber());
                     break;
                 }
             }
+
+
         }
     }
 }

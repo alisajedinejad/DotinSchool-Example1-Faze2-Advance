@@ -1,13 +1,16 @@
 package Service;
 
-import Exception.DepositBalanceNotEnough;
 import Service.Handler.FileWriters;
 import model.BalanceEntity;
 import model.PayEntity;
 import model.TransactionEntity;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 public class SettleSalary {
@@ -19,15 +22,18 @@ public class SettleSalary {
     private PayEntity payEntity;
     public static boolean singleToneParam = true;//for running just once constructor
     private static BigDecimal debtorMoney;
-    private static BigDecimal sum = BigDecimal.ZERO;
+    private static int counter = 0;
+
 
     public SettleSalary() {
 
         if (singleToneParam) {
             singleToneParam = false;
             int index = 0;
+
             for (PayEntity payEntity : SettleSalary.payEntities) {
                 if (payEntity.getDepositType().equals("debtor")) {
+
                     SettleSalary.debtorDepositNumber = payEntity.getDepositNumber();
                     SettleSalary.debtorMoney = payEntity.getAmount();
                     SettleSalary.indexOfDebtorDeposit = index;
@@ -46,9 +52,6 @@ public class SettleSalary {
         SettleSalary.transactionEntities = transactionEntities;
     }
 
-    public static BigDecimal getSum() {
-        return sum;
-    }
 
     public static int getIndexOfDebtorDeposit() {
         return indexOfDebtorDeposit;
@@ -103,22 +106,50 @@ public class SettleSalary {
                 '}';
     }
 
-    public static synchronized void subFromDebtor(BigDecimal subMoney) {
 
-        sum = sum.add(subMoney);
-        if (sum.equals(payEntities.get(payEntities.size() - 1).getAmount())) {
-
-            balanceEntities.get(0).setAmount(balanceEntities.get(0).getAmount().subtract(sum));
-
+    public static synchronized void criticalSection(List<BalanceEntity> balanceEntities) {
+        try {
+            FileWriters.writeToBalance(balanceEntities);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
-    public static synchronized void setTransaction(PayEntity payEntity) throws DepositBalanceNotEnough, IOException {
-        TransactionEntity transactionEntity = new TransactionEntity();
-        transactionEntity.setAmount(payEntity.getAmount());
-        transactionEntity.setCreditorDepositNumber(payEntity.getDepositNumber());
-        transactionEntity.setDebtorDepositNumber(SettleSalary.getDebtorDepositNumber());
-        FileWriters.writeToTransaction(transactionEntity);
+    public static synchronized void criticalSection(BigDecimal bigDecimal) {
+        SettleSalary.balanceEntities.get(0).setAmount(SettleSalary.balanceEntities.get(0).getAmount().subtract(bigDecimal));
+    }
+
+    public static synchronized void criticalSection(TransactionEntity transactionEntity) {
+        try {
+            FileWriters.writeToTransaction(transactionEntity);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static synchronized void criticalSection(String payNumber) {
+        List<PayEntity> payEntities = SettleSalary.getPayEntities();
+        for (PayEntity payEntity : payEntities) {
+            if (payEntity.getDepositNumber().equals(payNumber)) {
+                BigDecimal setterForPayDebtor = payEntities.get(SettleSalary.indexOfDebtorDeposit).getAmount();
+                setterForPayDebtor = setterForPayDebtor.subtract(payEntity.getAmount());
+                payEntity.setAmount(BigDecimal.ZERO);
+                payEntities.get(SettleSalary.indexOfDebtorDeposit).setAmount(setterForPayDebtor);
+                counter++;
+            }
+        }
+        if (counter == SettleSalary.payEntities.size() - 1) {
+            Path filePathObj0 = Paths.get("DataBase/pay.txt");
+            BufferedWriter writer0;
+            try {
+                writer0 = Files.newBufferedWriter(filePathObj0);
+                writer0.write("");
+                writer0.flush();
+                FileWriters.writeToPay(payEntities);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
 

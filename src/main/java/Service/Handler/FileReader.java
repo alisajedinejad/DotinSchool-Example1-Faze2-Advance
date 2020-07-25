@@ -20,49 +20,46 @@ import java.util.logging.Logger;
 public class FileReader {
     static Logger log = Logger.getLogger(FileReader.class.getName());
 
-    public static synchronized List<PayEntity> getPaysEntities() {
+    public static  List<PayEntity> getPaysEntities() throws IOException {
         List<PayEntity> payEntities = new ArrayList<PayEntity>();
         Path path = Paths.get("DataBase/pay.txt");
-        try (BufferedReader reader = Files.newBufferedReader(path, Charset.forName("UTF-8"))) {
-            String currentLine = null;
-            while ((currentLine = reader.readLine()) != null) {//while there is content on the current line
-                String line = (currentLine); // print the current line
-                String[] thisLine = line.split("\t");
-                PayEntity payEntity = new PayEntity();
-                payEntity.setAmount(new BigDecimal(thisLine[2]));
-                payEntity.setDepositNumber(thisLine[1]);
-                payEntity.setDepositType(thisLine[0]);
-                payEntities.add(payEntity);
-            }
-            log.info("All files successfully read .");
-        } catch (IOException ex) {
-            ex.printStackTrace(); //handle an exception here
+
+        List<String> lines = Files.readAllLines(path);
+
+        for(String line:lines){
+            String[] thisLine = line.split("\t");
+            PayEntity payEntity = new PayEntity();
+            payEntity.setAmount(new BigDecimal(thisLine[2]));
+            payEntity.setDepositNumber(thisLine[1]);
+            payEntity.setDepositType(thisLine[0]);
+            payEntities.add(payEntity);
         }
+
+
 
         return payEntities;
     }
 
-    public static synchronized List<BalanceEntity> getBalanceEntities() {
+    public static List<BalanceEntity> getBalanceEntities() throws IOException {
         List<BalanceEntity> balanceEntities = new ArrayList<BalanceEntity>();
         Path path = Paths.get("DataBase/balance.txt");
-        try (BufferedReader reader = Files.newBufferedReader(path, Charset.forName("UTF-8"))) {
-            String currentLine = null;
-            while ((currentLine = reader.readLine()) != null) {//while there is content on the current line
-                String line = (currentLine); // print the current line
-                String[] thisLine = line.split("\t");
+
+        List<String> lines = Files.readAllLines(path);
+
+        for(String line:lines){
+            String[] thisLine = line.split("\t");
                 BalanceEntity balanceEntity = new BalanceEntity();
                 balanceEntity.setAmount(new BigDecimal(thisLine[1]));
                 balanceEntity.setDepositNumber(thisLine[0]);
                 balanceEntities.add(balanceEntity);
-            }
-        } catch (IOException ex) {
-            ex.printStackTrace(); //handle an exception here
         }
+        
+
 
         return balanceEntities;
     }
 
-    public static synchronized String getDebtorNumber(List<PayEntity> payEntities) {
+    public static  String getDebtorNumber(List<PayEntity> payEntities) {
         for (PayEntity payEntity : payEntities) {
             if (payEntity.getDepositType().equals("debtor")) {
                 return payEntity.getDepositNumber();
@@ -71,7 +68,7 @@ public class FileReader {
         return null;
     }
 
-    public static synchronized BigDecimal getDebtorMoney(List<PayEntity> payEntities) {
+    public static  BigDecimal getDebtorMoney(List<PayEntity> payEntities) {
         for (PayEntity payEntity : payEntities) {
             if (payEntity.getDepositType().equals("debtor")) {
                 return payEntity.getAmount();
@@ -80,7 +77,7 @@ public class FileReader {
         return null;
     }
 
-    public static synchronized List<TransactionEntity> getTransactionEntities() {
+    public static  List<TransactionEntity> getTransactionEntities() {
         List<TransactionEntity> transactionEntities = new ArrayList<TransactionEntity>();
         Path path = Paths.get("DataBase/transactions.txt");
         try (BufferedReader reader = Files.newBufferedReader(path, Charset.forName("UTF-8"))) {
