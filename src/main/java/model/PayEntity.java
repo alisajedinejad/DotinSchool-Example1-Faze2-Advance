@@ -33,10 +33,6 @@ public class PayEntity {
 
     @Override
     public String toString() {
-        return "PayEntity{" +
-                "depositType='" + depositType + '\'' +
-                ", depositNumber='" + depositNumber + '\'' +
-                ", amount=" + amount +
-                '}';
+        return depositType + '\t' + depositNumber + '\t' + amount + '\n';
     }
 }

@@ -24,7 +24,6 @@ public class SettleSalary {
     private static BigDecimal debtorMoney;
     private static int counter = 0;
 
-
     public SettleSalary() {
 
         if (singleToneParam) {
@@ -107,28 +106,22 @@ public class SettleSalary {
     }
 
 
-    public static synchronized void criticalSection(List<BalanceEntity> balanceEntities) {
-        try {
-            FileWriters.writeToBalance(balanceEntities);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public static synchronized void criticalSection(List<BalanceEntity> balanceEntities) throws IOException {
+        FileWriters.writeToBalance(balanceEntities);
+
     }
 
     public static synchronized void criticalSection(BigDecimal bigDecimal) {
         SettleSalary.balanceEntities.get(0).setAmount(SettleSalary.balanceEntities.get(0).getAmount().subtract(bigDecimal));
     }
 
-    public static synchronized void criticalSection(TransactionEntity transactionEntity) {
-        try {
-            FileWriters.writeToTransaction(transactionEntity);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public static synchronized void criticalSection(TransactionEntity transactionEntity) throws IOException {
+        FileWriters.writeToTransaction(transactionEntity);
     }
 
-    public static synchronized void criticalSection(String payNumber) {
+    public static synchronized void criticalSection(String payNumber) throws IOException {
         List<PayEntity> payEntities = SettleSalary.getPayEntities();
+
         for (PayEntity payEntity : payEntities) {
             if (payEntity.getDepositNumber().equals(payNumber)) {
                 BigDecimal setterForPayDebtor = payEntities.get(SettleSalary.indexOfDebtorDeposit).getAmount();
@@ -141,14 +134,10 @@ public class SettleSalary {
         if (counter == SettleSalary.payEntities.size() - 1) {
             Path filePathObj0 = Paths.get("DataBase/pay.txt");
             BufferedWriter writer0;
-            try {
-                writer0 = Files.newBufferedWriter(filePathObj0);
-                writer0.write("");
-                writer0.flush();
-                FileWriters.writeToPay(payEntities);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            writer0 = Files.newBufferedWriter(filePathObj0);
+            writer0.write("");
+            writer0.flush();
+            FileWriters.writeToPay(payEntities);
         }
     }
 }

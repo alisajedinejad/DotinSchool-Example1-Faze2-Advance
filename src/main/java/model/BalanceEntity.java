@@ -24,9 +24,6 @@ public class BalanceEntity {
 
     @Override
     public String toString() {
-        return "BalanceEntity{" +
-                "depositNumber='" + depositNumber + '\'' +
-                ", amount=" + amount +
-                '}';
+        return depositNumber + '\t' + amount + '\n';
     }
 }

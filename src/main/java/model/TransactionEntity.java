@@ -37,10 +37,6 @@ public class TransactionEntity {
 
     @Override
     public String toString() {
-        return "TransactionEntity{" +
-                "debtorDepositNumber='" + debtorDepositNumber + '\'' +
-                ", creditorDepositNumber='" + creditorDepositNumber + '\'' +
-                ", amount=" + amount +
-                '}';
+        return debtorDepositNumber + '\t' + creditorDepositNumber + '\t' + amount + '\n';
     }
 }

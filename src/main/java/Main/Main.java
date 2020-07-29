@@ -14,9 +14,10 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 public class Main {
@@ -24,7 +25,8 @@ public class Main {
 
     public static void main(String args[]) throws InterruptedException, IOException {
 
-        ExecutorService executorService = Executors.newFixedThreadPool(50);
+        ExecutorService executorService = Executors.newFixedThreadPool(5);
+        CountDownLatch latch = new CountDownLatch(1);
         log.info("Start create 1000 Random Pay And Balance .");
         createRandomPayAndBalance();
         log.info("1000 Random Pay And Balance generated .");
@@ -36,33 +38,38 @@ public class Main {
         try {
             CheckDepositBalanceNotEnough checkNegativeDepositBalance = new CheckDepositBalanceNotEnough();
             checkNegativeDepositBalance.check(payEntities, balanceEntities);
+            SettleSalary.setBalanceEntities(balanceEntities);
+            SettleSalary.setPayEntities(payEntities);
+            SettleSalary settleSalary = new SettleSalary();//Just for run constructor
+
+            for (int i = 1; i < payEntities.size(); i += 2) {
+                MyThreads myThreads = new MyThreads();
+                List<PayEntity> payEntity = new ArrayList<>();
+                payEntity.add(payEntities.get(i - 1));
+                payEntity.add(payEntities.get(i));
+                myThreads.setPayEntity(payEntity);
+                executorService.execute(myThreads);
+            }
+
+
+            executorService.shutdown();
+            executorService.awaitTermination(10000, TimeUnit.MILLISECONDS);
+
+            log.info("Finished all threads");
+            long end = System.currentTimeMillis();
+            log.info("time of exe is : " + (end - start));
+
         } catch (DepositBalanceNotEnough depositBalanceNotEnough) {
             depositBalanceNotEnough.printStackTrace();
-            return;
         }
 
-        SettleSalary.setBalanceEntities(balanceEntities);
-        SettleSalary.setPayEntities(payEntities);
-        SettleSalary settleSalary = new SettleSalary();//Just for run constructor
 
-        for (PayEntity payEntity : payEntities) {
-            MyThreads myThreads = new MyThreads();
-            myThreads.setPayEntity(payEntity);
-            executorService.execute(myThreads);
-        }
-        executorService.shutdown();
-        while (!executorService.isTerminated()) {
-
-        }
-        log.info("Finished all threads");
-        long end = System.currentTimeMillis();
-        log.info("time of exe is : " + (end - start));
     }
 
     public static void createRandomPayAndBalance() {
 
-        List<BalanceEntity> balanceEntities = new ArrayList<BalanceEntity>();
-        List<PayEntity> payEntities = new ArrayList<PayEntity>();
+        List<BalanceEntity> balanceEntities = new ArrayList<>();
+        List<PayEntity> payEntities = new ArrayList<>();
         Random rand = new Random();
         BigDecimal sumOfSalary = BigDecimal.ZERO;
         BalanceEntity debtor = new BalanceEntity();
@@ -89,13 +96,11 @@ public class Main {
             BalanceEntity balanceEntity = new BalanceEntity();
             balanceEntity.setDepositNumber(depositNumberPartOne + "." + depositNumberPartTwo + "." + depositNumberPartThree + "." + depositNumberPartFour);
             balanceEntity.setAmount(amount);
-//            balanceEntity.setAmount(BigDecimal.ZERO);
             balanceEntities.add(balanceEntity);
             PayEntity payEntity = new PayEntity();
             payEntity.setDepositNumber(depositNumberPartOne + "." + depositNumberPartTwo + "." + depositNumberPartThree + "." + depositNumberPartFour);
             payEntity.setDepositType("creditor");
             payEntity.setAmount(creatorSalary);
-//            payEntity.setAmount(BigDecimal.TEN);
             payEntities.add(payEntity);
         }
         PayEntity debtorForPay = new PayEntity();

@@ -77,22 +77,18 @@ public class FileReader {
         return null;
     }
 
-    public static  List<TransactionEntity> getTransactionEntities() {
+    public static  List<TransactionEntity> getTransactionEntities() throws IOException {
         List<TransactionEntity> transactionEntities = new ArrayList<TransactionEntity>();
         Path path = Paths.get("DataBase/transactions.txt");
-        try (BufferedReader reader = Files.newBufferedReader(path, Charset.forName("UTF-8"))) {
-            String currentLine = null;
-            while ((currentLine = reader.readLine()) != null) {
-                String line = (currentLine);
-                String[] thisLine = line.split("\t");
-                TransactionEntity transactionEntity = new TransactionEntity();
-                transactionEntity.setAmount(null);
-                transactionEntity.setDebtorDepositNumber(thisLine[1]);
-                transactionEntity.setCreditorDepositNumber(thisLine[0]);
-                transactionEntities.add(transactionEntity);
-            }
-        } catch (IOException ex) {
-            ex.printStackTrace();
+        List<String> lines = Files.readAllLines(path);
+
+        for(String line:lines){
+            String[] thisLine = line.split("\t");
+            TransactionEntity transactionEntity = new TransactionEntity();
+            transactionEntity.setAmount(null);
+            transactionEntity.setDebtorDepositNumber(thisLine[1]);
+            transactionEntity.setCreditorDepositNumber(thisLine[0]);
+            transactionEntities.add(transactionEntity);
         }
         return transactionEntities;
     }
