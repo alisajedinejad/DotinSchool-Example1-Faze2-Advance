@@ -14,7 +14,6 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -25,11 +24,16 @@ public class Main {
 
     public static void main(String args[]) throws InterruptedException, IOException {
 
-        ExecutorService executorService = Executors.newFixedThreadPool(5);
-        CountDownLatch latch = new CountDownLatch(1);
-        log.info("Start create 1000 Random Pay And Balance .");
-        createRandomPayAndBalance();
-        log.info("1000 Random Pay And Balance generated .");
+        int countOfThreads = 5;
+        int sizeOfPayEntities = 1000;
+        int countOfPartition = countOfThreads * ((int) Math.log10(sizeOfPayEntities) - 1) * 10;
+        if (countOfPartition < 1) {
+            countOfPartition = countOfThreads;
+        }
+        ExecutorService executorService = Executors.newFixedThreadPool(countOfThreads);
+        log.info("Start create " + sizeOfPayEntities + " Random Pay And Balance .");
+        createRandomPayAndBalance(sizeOfPayEntities);
+        log.info(sizeOfPayEntities + " Random Pay And Balance generated .");
         long start = System.currentTimeMillis();
         List<PayEntity> payEntities = FileReader.getPaysEntities();
         List<BalanceEntity> balanceEntities = FileReader.getBalanceEntities();
@@ -42,13 +46,31 @@ public class Main {
             SettleSalary.setPayEntities(payEntities);
             SettleSalary settleSalary = new SettleSalary();//Just for run constructor
 
-            for (int i = 1; i < payEntities.size(); i += 2) {
-                MyThreads myThreads = new MyThreads();
-                List<PayEntity> payEntity = new ArrayList<>();
-                payEntity.add(payEntities.get(i - 1));
-                payEntity.add(payEntities.get(i));
-                myThreads.setPayEntity(payEntity);
-                executorService.execute(myThreads);
+            int payCounter = payEntities.size();
+
+            while (payCounter > 0) {
+
+                if (payCounter >= countOfPartition) {
+                    MyThreads myThreads = new MyThreads();
+                    List<PayEntity> payEntity = new ArrayList<>();
+                    for (int i = 0; i < countOfPartition; i++) {
+                        payEntity.add(payEntities.get(payCounter - 1));
+                        payCounter--;
+                    }
+                    myThreads.setPayEntity(payEntity);
+                    executorService.execute(myThreads);
+                } else {
+                    MyThreads myThreads = new MyThreads();
+                    List<PayEntity> payEntity = new ArrayList<>();
+                    for (int i = 0; i < payEntities.size() % countOfPartition; i++) {
+                        payEntity.add(payEntities.get(i));
+                        payCounter--;
+                    }
+                    myThreads.setPayEntity(payEntity);
+                    executorService.execute(myThreads);
+                }
+
+
             }
 
 
@@ -66,7 +88,7 @@ public class Main {
 
     }
 
-    public static void createRandomPayAndBalance() {
+    public static void createRandomPayAndBalance(int size) {
 
         List<BalanceEntity> balanceEntities = new ArrayList<>();
         List<PayEntity> payEntities = new ArrayList<>();
@@ -76,7 +98,7 @@ public class Main {
         debtor.setAmount(new BigDecimal("10000000"));
         debtor.setDepositNumber("1.10.100.1");
         balanceEntities.add(debtor);
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < size - 1; i++) {
             int depositNumberPartOne = rand.nextInt(7) + 2;
             int depositNumberPartTwo = rand.nextInt(899) + 100;
             int depositNumberPartThree = rand.nextInt(899) + 100;

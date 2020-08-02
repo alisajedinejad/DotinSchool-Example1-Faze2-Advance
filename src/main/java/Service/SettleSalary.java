@@ -5,12 +5,8 @@ import model.BalanceEntity;
 import model.PayEntity;
 import model.TransactionEntity;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 public class SettleSalary {
@@ -105,10 +101,8 @@ public class SettleSalary {
                 '}';
     }
 
-
     public static synchronized void criticalSection(List<BalanceEntity> balanceEntities) throws IOException {
         FileWriters.writeToBalance(balanceEntities);
-
     }
 
     public static synchronized void criticalSection(BigDecimal bigDecimal) {
@@ -119,27 +113,7 @@ public class SettleSalary {
         FileWriters.writeToTransaction(transactionEntity);
     }
 
-    public static synchronized void criticalSection(String payNumber) throws IOException {
-        List<PayEntity> payEntities = SettleSalary.getPayEntities();
 
-        for (PayEntity payEntity : payEntities) {
-            if (payEntity.getDepositNumber().equals(payNumber)) {
-                BigDecimal setterForPayDebtor = payEntities.get(SettleSalary.indexOfDebtorDeposit).getAmount();
-                setterForPayDebtor = setterForPayDebtor.subtract(payEntity.getAmount());
-                payEntity.setAmount(BigDecimal.ZERO);
-                payEntities.get(SettleSalary.indexOfDebtorDeposit).setAmount(setterForPayDebtor);
-                counter++;
-            }
-        }
-        if (counter == SettleSalary.payEntities.size() - 1) {
-            Path filePathObj0 = Paths.get("DataBase/pay.txt");
-            BufferedWriter writer0;
-            writer0 = Files.newBufferedWriter(filePathObj0);
-            writer0.write("");
-            writer0.flush();
-            FileWriters.writeToPay(payEntities);
-        }
-    }
 }
 
 
