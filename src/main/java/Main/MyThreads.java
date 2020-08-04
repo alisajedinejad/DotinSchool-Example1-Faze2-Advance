@@ -27,13 +27,13 @@ public class MyThreads implements Runnable {
     public void run() {
         List<BalanceEntity> balanceEntities = SettleSalary.getBalanceEntities();
         try {
-            SettleSalary.criticalSection(this.threadCriticalSection(balanceEntities));
+            this.threadCriticalSectionForSetTransactionAndSetBalance(balanceEntities);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private synchronized List<BalanceEntity> threadCriticalSection(List<BalanceEntity> balanceEntities){
+    private synchronized void threadCriticalSectionForSetTransactionAndSetBalance(List<BalanceEntity> balanceEntities) throws IOException {
 
         for (PayEntity payEntity : getPayEntities()) {
             if (payEntity.getDepositType().equals("creditor")) {
@@ -44,20 +44,18 @@ public class MyThreads implements Runnable {
                         transactionEntity.setDebtorDepositNumber(SettleSalary.getDebtorDepositNumber());
                         transactionEntity.setCreditorDepositNumber(balanceEntity.getDepositNumber());
                         transactionEntity.setAmount(payEntity.getAmount());
-                        try {
-                            SettleSalary.criticalSection(transactionEntity);
-                            SettleSalary.criticalSection(payEntity.getAmount());
-                            break;
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                        SettleSalary.criticalSection(transactionEntity);
+                        SettleSalary.criticalSection(payEntity.getAmount());
                         break;
                     }
                 }
             }
         }
-        return balanceEntities;
+        SettleSalary.criticalSection(balanceEntities);
     }
+
+
 }
+
 
 
