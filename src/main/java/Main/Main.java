@@ -6,6 +6,7 @@ import Service.Handler.FileReader;
 import Service.Handler.FileWriters;
 import Service.SettleSalary;
 import Service.Validation.CheckDepositBalanceNotEnough;
+import com.google.common.collect.Lists;
 import model.BalanceEntity;
 import model.PayEntity;
 
@@ -25,11 +26,12 @@ public class Main {
     public static void main(String args[]) throws InterruptedException, IOException {
 
         int countOfThreads = 5;
-        int sizeOfPayEntities = 1000;
+        int sizeOfPayEntities = 1021;
         int countOfPartition = countOfThreads * ((int) Math.log10(sizeOfPayEntities) - 1) * 10;
         if (countOfPartition < 1) {
             countOfPartition = countOfThreads;
         }
+
         ExecutorService executorService = Executors.newFixedThreadPool(countOfThreads);
         log.info("Start create " + sizeOfPayEntities + " Random Pay And Balance .");
         createRandomPayAndBalance(sizeOfPayEntities);
@@ -38,7 +40,6 @@ public class Main {
         List<PayEntity> payEntities = FileReader.getPaysEntities();
         List<BalanceEntity> balanceEntities = FileReader.getBalanceEntities();
 
-
         try {
             CheckDepositBalanceNotEnough checkNegativeDepositBalance = new CheckDepositBalanceNotEnough();
             checkNegativeDepositBalance.check(payEntities, balanceEntities);
@@ -46,33 +47,12 @@ public class Main {
             SettleSalary.setPayEntities(payEntities);
             SettleSalary settleSalary = new SettleSalary();//Just for run constructor
 
-            int payCounter = payEntities.size();
-
-            while (payCounter > 0) {
-
-                if (payCounter >= countOfPartition) {
-                    MyThreads myThreads = new MyThreads();
-                    List<PayEntity> payEntity = new ArrayList<>();
-                    for (int i = 0; i < countOfPartition; i++) {
-                        payEntity.add(payEntities.get(payCounter - 1));
-                        payCounter--;
-                    }
-                    myThreads.setPayEntity(payEntity);
-                    executorService.execute(myThreads);
-                } else {
-                    MyThreads myThreads = new MyThreads();
-                    List<PayEntity> payEntity = new ArrayList<>();
-                    for (int i = 0; i < payEntities.size() % countOfPartition; i++) {
-                        payEntity.add(payEntities.get(i));
-                        payCounter--;
-                    }
-                    myThreads.setPayEntity(payEntity);
-                    executorService.execute(myThreads);
-                }
-
-
+            List<List<PayEntity> > payPartitionLists = Lists.partition(payEntities, countOfPartition);
+            for (List<PayEntity> sublist: payPartitionLists) {
+                MyThreads myThreads = new MyThreads();
+                myThreads.setPayEntity(sublist);
+                executorService.execute(myThreads);
             }
-
 
             executorService.shutdown();
             executorService.awaitTermination(10000, TimeUnit.MILLISECONDS);

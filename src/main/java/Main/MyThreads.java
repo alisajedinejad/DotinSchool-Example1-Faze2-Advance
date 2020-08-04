@@ -15,7 +15,7 @@ import java.util.List;
 public class MyThreads implements Runnable {
     List<PayEntity> payEntities = new ArrayList<>();
 
-    public List<PayEntity> getPayEntity() {
+    public List<PayEntity> getPayEntities() {
         return payEntities;
     }
 
@@ -24,20 +24,29 @@ public class MyThreads implements Runnable {
     }
 
     @Override
-    public synchronized void run() {
+    public void run() {
         List<BalanceEntity> balanceEntities = SettleSalary.getBalanceEntities();
-        for (int i = 0; i < this.payEntities.size(); i++) {
-            if (this.payEntities.get(i).getDepositType().equals("creditor")) {
+        try {
+            SettleSalary.criticalSection(this.threadCriticalSection(balanceEntities));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private synchronized List<BalanceEntity> threadCriticalSection(List<BalanceEntity> balanceEntities){
+
+        for (PayEntity payEntity : getPayEntities()) {
+            if (payEntity.getDepositType().equals("creditor")) {
                 for (BalanceEntity balanceEntity : balanceEntities) {
-                    if (balanceEntity.getDepositNumber().equals(this.payEntities.get(i).getDepositNumber())) {
-                        balanceEntity.setAmount(balanceEntity.getAmount().add(payEntities.get(i).getAmount()));
+                    if (balanceEntity.getDepositNumber().equals(payEntity.getDepositNumber())) {
+                        balanceEntity.setAmount(balanceEntity.getAmount().add(payEntity.getAmount()));
                         TransactionEntity transactionEntity = new TransactionEntity();
                         transactionEntity.setDebtorDepositNumber(SettleSalary.getDebtorDepositNumber());
                         transactionEntity.setCreditorDepositNumber(balanceEntity.getDepositNumber());
-                        transactionEntity.setAmount(payEntities.get(i).getAmount());
+                        transactionEntity.setAmount(payEntity.getAmount());
                         try {
                             SettleSalary.criticalSection(transactionEntity);
-                            SettleSalary.criticalSection(getPayEntity().get(i).getAmount());
+                            SettleSalary.criticalSection(payEntity.getAmount());
                             break;
                         } catch (IOException e) {
                             e.printStackTrace();
@@ -47,12 +56,7 @@ public class MyThreads implements Runnable {
                 }
             }
         }
-        try {
-            SettleSalary.criticalSection(balanceEntities);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+        return balanceEntities;
     }
 }
 
